@@ -91,6 +91,21 @@ dataDb.serialize(() => {
     FOREIGN KEY (created_by) REFERENCES users(id)
   )`);
 
+  dataDb.run(`CREATE TABLE IF NOT EXISTS incidents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aluno TEXT NOT NULL,
+    turma TEXT NOT NULL,
+    descricao TEXT NOT NULL,
+    data TEXT NOT NULL,
+    hora TEXT NOT NULL,
+    empresa_id INTEGER NOT NULL,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  )`);
+
   // Seed companies and keep names in the required format
   dataDb.get("SELECT COUNT(*) as count FROM empresas", (err, row) => {
     if (!row || row.count == 0) {
