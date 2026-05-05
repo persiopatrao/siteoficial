@@ -16,6 +16,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// API Routes MUST come BEFORE static files
+// (new organized structure)
+app.use('/api/auth', AuthRoutes);
+app.use('/api/users', UsersRoutes);
+app.use('/api/incidents', IncidentsRoutes);
+app.use('/api/empresas', CompaniesRoutes);
+
 // Servir arquivos estáticos da raiz do projeto
 const rootPath = path.join(__dirname, '..');
 app.use(express.static(rootPath));
@@ -23,12 +30,6 @@ app.use(express.static(rootPath));
 // Servir arquivos estáticos do frontend (para compatibilidade)
 const frontendPath = path.join(__dirname, '../frontend');
 app.use(express.static(frontendPath));
-
-// API Routes (new organized structure)
-app.use('/api/auth', AuthRoutes);
-app.use('/api/users', UsersRoutes);
-app.use('/api/incidents', IncidentsRoutes);
-app.use('/api/empresas', CompaniesRoutes);
 
 // Legacy routes for backward compatibility
 const jwt = require('jsonwebtoken');
