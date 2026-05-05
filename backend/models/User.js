@@ -137,7 +137,7 @@ class User {
 
   static async resetIncidentTotals() {
     return new Promise((resolve, reject) => {
-      dataDb.run("UPDATE users SET incident_count = 0", [], function(err) {
+      authDb.run("UPDATE users SET incident_count = 0", [], function(err) {
         if (err) reject(err);
         else resolve({ changes: this.changes });
       });
