@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Sistema de Ocorrências</title>
+  <link rel="stylesheet" href="/frontend/css/styles.css">
+</head>
+<body>
+  <div class="page-container">
+    <header class="page-header">
+      <h1>Dashboard</h1>
+      <div>
+        <span id="dashboardRole"></span>
+        <button id="logoutButton" class="btn btn-secondary">Sair</button>
+      </div>
+    </header>
+
+    <div class="summary-card">
+      <h2>Minhas ocorrências</h2>
+      <p>Crie e visualize suas ocorrências.</p>
+    </div>
+
+    <section class="card">
+      <h2>Nova ocorrência</h2>
+      <form id="incidentForm" class="form">
+        <label for="aluno">Aluno</label>
+        <input type="text" id="aluno" required>
+
+        <label for="turma">Turma</label>
+        <input type="text" id="turma" required>
+
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" rows="4" required></textarea>
+
+        <label for="data">Data</label>
+        <input type="date" id="data" required>
+
+        <label for="hora">Hora</label>
+        <input type="time" id="hora" required>
+
+        <button type="submit" class="btn btn-primary">Salvar ocorrência</button>
+      </form>
+      <div id="incidentMessage" class="message"></div>
+    </section>
+
+    <section class="card">
+      <h2>Ocorrências criadas</h2>
+      <div id="incidentsList" class="table-container"></div>
+      <div id="incidentsMessage" class="message"></div>
+    </section>
+  </div>
+  <script src="/frontend/js/app.js"></script>
+</body>
+</html>

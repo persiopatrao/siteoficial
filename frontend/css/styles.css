@@ -1,0 +1,155 @@
+:root {
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --text: #212121;
+  --secondary: #616161;
+  --primary: #1d4ed8;
+  --primary-dark: #1e40af;
+  --border: #d1d5db;
+  --success: #047857;
+  --danger: #b91c1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background: linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%);
+  color: var(--text);
+}
+
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header,
+.login-card,
+.form-card,
+.card,
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  padding: 24px;
+  margin-bottom: 22px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-header h1,
+.login-card h1,
+.form-card h1,
+.card h2,
+.summary-card h2 {
+  margin: 0 0 16px;
+}
+
+.login-card,
+.form-card {
+  max-width: 480px;
+  margin: 50px auto;
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-inline {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+label {
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: var(--text);
+}
+
+.link-button {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f8fafc;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.message {
+  color: var(--danger);
+  margin-top: 14px;
+}
+
+.message.success {
+  color: var(--success);
+}
+
+@media (max-width: 720px) {
+  .page-header,
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

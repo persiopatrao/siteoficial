@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin - Sistema de Ocorrências</title>
+  <link rel="stylesheet" href="/frontend/css/styles.css">
+</head>
+<body>
+  <div class="page-container">
+    <header class="page-header">
+      <h1>Painel Super Admin</h1>
+      <div>
+        <span id="superadminRole"></span>
+        <button id="logoutButton" class="btn btn-secondary">Sair</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Empresas</h2>
+      <form id="companyForm" class="form-inline">
+        <input type="text" id="companyName" placeholder="Nome da empresa" required>
+        <button type="submit" class="btn btn-primary">Criar empresa</button>
+      </form>
+      <div id="companyMessage" class="message"></div>
+      <div id="companiesList" class="table-container"></div>
+    </section>
+
+    <section class="card">
+      <h2>Usuários</h2>
+      <div id="superUsersList" class="table-container"></div>
+      <div id="superUsersMessage" class="message"></div>
+    </section>
+
+    <section class="card">
+      <h2>Criar usuário</h2>
+      <form id="superCreateForm" class="form">
+        <label for="superUsername">Usuário</label>
+        <input type="text" id="superUsername" required>
+
+        <label for="superPassword">Senha</label>
+        <input type="password" id="superPassword" required>
+
+        <label for="superUserRole">Role</label>
+        <select id="superUserRole" required>
+          <option value="">Selecione role</option>
+          <option value="admin">admin</option>
+          <option value="usuario">usuario</option>
+        </select>
+
+        <label for="superUserEmpresa">Unidade escolar</label>
+        <select id="superUserEmpresa" required>
+          <option value="">Selecione escola</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">Criar usuário</button>
+      </form>
+      <div id="superCreateMessage" class="message"></div>
+    </section>
+  </div>
+  <script src="/frontend/js/app.js"></script>
+</body>
+</html>
