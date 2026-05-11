@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "build": "echo 'Build complete'"
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "heroku-postbuild": "npm --prefix frontend install && npm --prefix frontend run build"
   },
   "engines": {
     "node": "20.x"

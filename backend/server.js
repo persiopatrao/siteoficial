@@ -23,11 +23,11 @@ app.use('/api/users', UsersRoutes);
 app.use('/api/incidents', IncidentsRoutes);
 app.use('/api/empresas', CompaniesRoutes);
 
-// Servir arquivos estáticos do frontend
-const frontendPath = path.join(__dirname, '../frontend');
+// Servir arquivos estáticos do frontend compilado
+const frontendPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendPath));
 
-// Fallback para SPA: todas as rotas não-API servem o frontend
+// Fallback para SPA: todas as rotas não-API servem o frontend compilado
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Rota não encontrada' });
