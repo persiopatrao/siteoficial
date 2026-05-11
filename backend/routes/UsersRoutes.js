@@ -28,8 +28,14 @@ router.post('/', UsersController.createUser);
 // PUT /api/users/:id/status
 router.put('/:id/status', UsersController.updateUserStatus);
 
+// PUT /api/users/:id/approve
+router.put('/:id/approve', UsersController.approveUser);
+
 // PUT /api/users/:id/role
 router.put('/:id/role', UsersController.updateUserRole);
+
+// DELETE /api/users/:id
+router.delete('/:id', UsersController.deleteUser);
 
 // POST /api/users/reset-incident-totals
 router.post('/reset-incident-totals', UsersController.resetIncidentTotals);

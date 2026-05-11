@@ -7,10 +7,23 @@ class UsersController {
       const { page = 1, limit = 10, status, role, search } = req.query;
       const empresa_id = req.user.role === 'super_admin' ? null : req.user.empresa_id;
 
+      const statusMap = {
+        pending: 'pendente',
+        active: 'aprovado',
+        rejected: 'rejeitado'
+      };
+
+      const roleMap = {
+        user: 'user',
+        usuario: 'user',
+        admin: 'admin',
+        super_admin: 'super_admin'
+      };
+
       const filters = {
         empresa_id,
-        status,
-        role,
+        status: status ? statusMap[status] || status : undefined,
+        role: role ? roleMap[role] || role : undefined,
         search,
         limit: parseInt(limit),
         offset: (parseInt(page) - 1) * parseInt(limit)
@@ -18,9 +31,14 @@ class UsersController {
 
       const users = await User.findAll(filters);
       const stats = await User.getStats(empresa_id);
+      const normalizedUsers = users.map((u) => ({
+        ...u,
+        role: u.role === 'usuario' ? 'user' : u.role,
+        status: u.status === 'aprovado' ? 'active' : u.status === 'pendente' ? 'pending' : u.status === 'rejeitado' ? 'rejected' : u.status,
+      }));
 
       res.json({
-        users,
+        users: normalizedUsers,
         stats,
         pagination: {
           page: parseInt(page),
@@ -59,8 +77,9 @@ class UsersController {
     try {
       const { id } = req.params;
       const { role } = req.body;
+      const normalizedRole = role === 'usuario' ? 'user' : role;
 
-      if (!['super_admin', 'admin', 'usuario'].includes(role)) {
+      if (!['super_admin', 'admin', 'user'].includes(normalizedRole)) {
         return res.status(400).json({ error: 'Role inválido' });
       }
 
@@ -69,11 +88,51 @@ class UsersController {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      const result = await User.updateRole(id, role);
+      const result = await User.updateRole(id, normalizedRole);
       res.json({ message: 'Role atualizado com sucesso', changes: result.changes });
     } catch (error) {
       console.error('Update user role error:', error);
       res.status(500).json({ error: 'Erro ao atualizar role' });
+    }
+  }
+
+  static async approveUser(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      const result = await User.updateStatus(id, 'aprovado');
+      res.json({ message: 'Usuário aprovado com sucesso', changes: result.changes });
+    } catch (error) {
+      console.error('Approve user error:', error);
+      res.status(500).json({ error: 'Erro ao aprovar usuário' });
+    }
+  }
+
+  static async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      if (Number(req.user.id) === Number(id)) {
+        return res.status(400).json({ error: 'Não é possível excluir seu próprio usuário' });
+      }
+
+      const result = await User.deleteUser(id);
+      if (!result.changes) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      res.json({ message: 'Usuário excluído com sucesso', changes: result.changes });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({ error: 'Erro ao excluir usuário' });
     }
   }
 
@@ -85,16 +144,18 @@ class UsersController {
         return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
       }
 
-      if (!['admin', 'usuario'].includes(role)) {
+      if (!['admin', 'user', 'usuario'].includes(role)) {
         return res.status(400).json({ error: 'Role inválido' });
       }
+
+      const normalizedRole = role === 'usuario' ? 'user' : role;
 
       // Check permissions
       if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      const result = await User.create({ username, email, password, empresa_id, role });
+      const result = await User.create({ username, email, password, empresa_id, role: normalizedRole });
       res.status(201).json({ id: result.id, message: 'Usuário criado com sucesso' });
     } catch (error) {
       console.error('Create user error:', error);

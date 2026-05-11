@@ -2,14 +2,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const { authDb } = require('../models/Database');
 
 const router = express.Router();
 const SECRET_KEY = 'your_secret_key';
-
-const authDb = new sqlite3.Database(path.join(__dirname, '../auth.db'));
-const dataDb = new sqlite3.Database(path.join(__dirname, '../database.db'));
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
@@ -19,10 +15,13 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
   }
 
-  authDb.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", [username], (err, user) => {
-    if (err || !user) {
-      return res.status(400).json({ error: 'Usuário não encontrado' });
-    }
+  authDb.get(
+    "SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)",
+    [username, username],
+    (err, user) => {
+      if (err || !user) {
+        return res.status(400).json({ error: 'Usuário não encontrado' });
+      }
 
     if (!bcrypt.compareSync(password, user.password)) {
       return res.status(400).json({ error: 'Senha incorreta' });
@@ -36,12 +35,21 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ error: 'Escola incorreta' });
     }
 
+    const normalizedRole = user.role === 'usuario' ? 'user' : user.role;
     const token = jwt.sign(
-      { id: user.id, role: user.role, empresa_id: user.empresa_id },
+      { id: user.id, role: normalizedRole, empresa_id: user.empresa_id },
       SECRET_KEY
     );
 
-    res.json({ token, role: user.role });
+    res.json({
+      token,
+      role: normalizedRole,
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      empresa_id: user.empresa_id,
+      status: user.status,
+    });
   });
 });
 
@@ -55,7 +63,7 @@ router.post('/register', (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(password, 10);
   authDb.run(
-    "INSERT INTO users (username, password, role, empresa_id, status) VALUES (?, ?, 'usuario', ?, 'pendente')",
+    "INSERT INTO users (username, password, role, empresa_id, status) VALUES (?, ?, 'user', ?, 'pendente')",
     [username, hashedPassword, empresa_id],
     function(err) {
       if (err) {

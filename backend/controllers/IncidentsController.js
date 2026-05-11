@@ -27,10 +27,17 @@ class IncidentsController {
       };
 
       const incidents = await Incident.findAll(filters);
+      const enrichedIncidents = await Promise.all(incidents.map(async (incident) => {
+        const creator = incident.created_by ? await User.findById(incident.created_by) : null;
+        return {
+          ...incident,
+          created_by_name: creator ? creator.username || creator.email || `ID ${incident.created_by}` : `ID ${incident.created_by}`
+        };
+      }));
       const totalCount = await Incident.getTotalCount(empresa_id);
 
       res.json({
-        incidents,
+        incidents: enrichedIncidents,
         total: totalCount,
         pagination: {
           page: parseInt(page),
@@ -46,12 +53,20 @@ class IncidentsController {
 
   static async createIncident(req, res) {
     try {
-      const { aluno, turma, descricao, data, hora } = req.body;
-      const empresa_id = req.user.empresa_id;
+      const { aluno, turma, descricao, data, hora, empresa_id: bodyEmpresaId } = req.body;
       const created_by = req.user.id;
+      let empresa_id = req.user.empresa_id;
 
-      if (!aluno || !turma || !descricao || !data || !hora) {
+      if (req.user.role === 'super_admin') {
+        empresa_id = bodyEmpresaId;
+      }
+
+      if (!aluno || !turma || !descricao || !data || !hora || !empresa_id) {
         return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+      }
+
+      if (req.user.role === 'usuario' && req.user.empresa_id !== empresa_id) {
+        return res.status(403).json({ error: 'Você não pode criar ocorrências para outras escolas' });
       }
 
       const result = await Incident.create({
@@ -170,6 +185,50 @@ class IncidentsController {
     } catch (error) {
       console.error('Delete incident error:', error);
       res.status(500).json({ error: 'Erro ao excluir ocorrência' });
+    }
+  }
+
+  static async approveIncident(req, res) {
+    try {
+      const { id } = req.params;
+      const incident = await Incident.findById(id);
+      if (!incident) return res.status(404).json({ error: 'Ocorrência não encontrada' });
+
+      if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Você não tem permissão para aprovar esta ocorrência' });
+      }
+
+      if (req.user.role !== 'super_admin' && incident.empresa_id !== req.user.empresa_id) {
+        return res.status(403).json({ error: 'Você não tem permissão para aprovar ocorrências de outra escola' });
+      }
+
+      await Incident.updateStatus(id, 'aprovado');
+      res.json({ message: 'Ocorrência aprovada com sucesso' });
+    } catch (error) {
+      console.error('Approve incident error:', error);
+      res.status(500).json({ error: 'Erro ao aprovar ocorrência' });
+    }
+  }
+
+  static async rejectIncident(req, res) {
+    try {
+      const { id } = req.params;
+      const incident = await Incident.findById(id);
+      if (!incident) return res.status(404).json({ error: 'Ocorrência não encontrada' });
+
+      if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Você não tem permissão para rejeitar esta ocorrência' });
+      }
+
+      if (req.user.role !== 'super_admin' && incident.empresa_id !== req.user.empresa_id) {
+        return res.status(403).json({ error: 'Você não tem permissão para rejeitar ocorrências de outra escola' });
+      }
+
+      await Incident.updateStatus(id, 'rejeitado');
+      res.json({ message: 'Ocorrência rejeitada com sucesso' });
+    } catch (error) {
+      console.error('Reject incident error:', error);
+      res.status(500).json({ error: 'Erro ao rejeitar ocorrência' });
     }
   }
 }

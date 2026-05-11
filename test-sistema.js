@@ -1,10 +1,11 @@
 const http = require('http');
+const PORT = process.env.PORT || 3000;
 
 function request(method, path, data, token) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost',
-      port: 3000,
+      port: PORT,
       path: path,
       method: method,
       headers: {
@@ -42,7 +43,7 @@ async function runTests() {
   console.log('🔐 TESTES DE AUTENTICAÇÃO\n');
   
   console.log('1️⃣  LOGIN - Super Admin (Rafa.admin)');
-  let res = await request('POST', '/login', {username: 'Rafa.admin', password: '123', empresa_id: 1});
+  let res = await request('POST', '/api/auth/login', {username: 'Rafa.admin', password: '123', empresa_id: 1});
   let rafiToken = null;
   if (res.status === 200) {
     console.log('   ✅ Status: ' + res.status);
@@ -53,7 +54,7 @@ async function runTests() {
   }
   
   console.log('\n2️⃣  LOGIN - Admin (lucas.usuario)');
-  res = await request('POST', '/login', {username: 'lucas.usuario', password: '123', empresa_id: 1});
+  res = await request('POST', '/api/auth/login', {username: 'lucas.usuario', password: '123', empresa_id: 1});
   let lucasToken = null;
   if (res.status === 200) {
     console.log('   ✅ Status: ' + res.status);
@@ -64,7 +65,7 @@ async function runTests() {
   }
   
   console.log('\n3️⃣  LOGIN - Usuário Regular (junior.usuario)');
-  res = await request('POST', '/login', {username: 'junior.usuario', password: '123', empresa_id: 2});
+  res = await request('POST', '/api/auth/login', {username: 'junior.usuario', password: '123', empresa_id: 1});
   let juniorToken = null;
   if (res.status === 200) {
     console.log('   ✅ Status: ' + res.status);
@@ -115,8 +116,9 @@ async function runTests() {
   console.log('7️⃣  Listar Ocorrências');
   res = await request('GET', '/api/incidents', null, lucasToken);
   if (res.status === 200) {
+    const incidentCount = Array.isArray(res.data) ? res.data.length : (res.data.incidents ? res.data.incidents.length : 0);
     console.log('   ✅ Status: ' + res.status);
-    console.log('   Total: ' + (Array.isArray(res.data) ? res.data.length : Object.keys(res.data).length));
+    console.log('   Total: ' + incidentCount);
   } else {
     console.log('   ❌ Erro: ' + res.status);
   }

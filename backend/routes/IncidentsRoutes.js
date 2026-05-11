@@ -14,6 +14,12 @@ router.get('/', IncidentsController.getIncidents);
 // POST /api/incidents
 router.post('/', IncidentsController.createIncident);
 
+// PUT /api/incidents/:id/approve
+router.put('/:id/approve', IncidentsController.approveIncident);
+
+// PUT /api/incidents/:id/reject
+router.put('/:id/reject', IncidentsController.rejectIncident);
+
 // PUT /api/incidents/:id
 router.put('/:id', IncidentsController.updateIncident);
 

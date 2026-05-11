@@ -19,6 +19,26 @@ router.get('/', (req, res) => {
 // All routes below require authentication
 router.use(verifyToken);
 
+// POST /api/empresas - Create a new company
+router.post('/', (req, res) => {
+  if (req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
+
+  const { nome } = req.body;
+  if (!nome) {
+    return res.status(400).json({ error: 'Nome da empresa é obrigatório' });
+  }
+
+  dataDb.run('INSERT INTO empresas (nome) VALUES (?)', [nome], function(err) {
+    if (err) {
+      console.error('Erro ao criar empresa:', err);
+      return res.status(500).json({ error: 'Erro ao criar empresa' });
+    }
+    res.status(201).json({ id: this.lastID, nome });
+  });
+});
+
 // DELETE /api/empresas/:id
 router.delete('/:id', (req, res) => {
   if (req.user.role !== 'super_admin') {

@@ -67,12 +67,13 @@ class User {
 
   static async create(userData) {
     return new Promise((resolve, reject) => {
-      const { username, email, password, empresa_id, role = 'usuario' } = userData;
+      const { username, email, password, empresa_id, role = 'user' } = userData;
+      const normalizedRole = role === 'usuario' ? 'user' : role;
       const hashedPassword = bcrypt.hashSync(password, 10);
 
       authDb.run(
         "INSERT INTO users (username, email, password, empresa_id, role, status) VALUES (?, ?, ?, ?, ?, 'pendente')",
-        [username, email, hashedPassword, empresa_id, role],
+        [username, email, hashedPassword, empresa_id, normalizedRole],
         function(err) {
           if (err) reject(err);
           else resolve({ id: this.lastID });
@@ -96,9 +97,23 @@ class User {
 
   static async updateRole(id, role) {
     return new Promise((resolve, reject) => {
+      const normalizedRole = role === 'usuario' ? 'user' : role;
       authDb.run(
         "UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        [role, id],
+        [normalizedRole, id],
+        function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        }
+      );
+    });
+  }
+
+  static async deleteUser(id) {
+    return new Promise((resolve, reject) => {
+      authDb.run(
+        "DELETE FROM users WHERE id = ?",
+        [id],
         function(err) {
           if (err) reject(err);
           else resolve({ changes: this.changes });

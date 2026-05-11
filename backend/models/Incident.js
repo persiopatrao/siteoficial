@@ -96,6 +96,19 @@ class Incident {
     });
   }
 
+  static async updateStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      dataDb.run(
+        `UPDATE incidents SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [status, id],
+        function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        }
+      );
+    });
+  }
+
   static async getTotalCount(empresa_id) {
     return new Promise((resolve, reject) => {
       let query = "SELECT COUNT(*) as count FROM incidents";
@@ -126,9 +139,12 @@ class Incident {
       if (empresa_id) {
         query += " WHERE empresa_id = ?";
         params.push(empresa_id);
+        query += ` AND data >= date('now', '-${months} months')`;
+      } else {
+        query += ` WHERE data >= date('now', '-${months} months')`;
       }
 
-      query += ` AND data >= date('now', '-${months} months')
+      query += `
         GROUP BY strftime('%Y-%m', data)
         ORDER BY month DESC`;
 

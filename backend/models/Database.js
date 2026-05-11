@@ -3,8 +3,8 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Database connections
-const authDb = new sqlite3.Database(path.join(__dirname, 'auth.db'));
-const dataDb = new sqlite3.Database(path.join(__dirname, 'database.db'));
+const authDb = new sqlite3.Database(path.join(__dirname, '..', 'auth.db'));
+const dataDb = new sqlite3.Database(path.join(__dirname, '..', 'database.db'));
 
 // Initialize database tables
 authDb.serialize(() => {
@@ -22,8 +22,25 @@ authDb.serialize(() => {
   )`);
 
   authDb.all("PRAGMA table_info(users)", (err, columns) => {
-    if (!err && columns && !columns.some(col => col.name === 'incident_count')) {
-      authDb.run('ALTER TABLE users ADD COLUMN incident_count INTEGER DEFAULT 0');
+    if (!err && columns) {
+      if (!columns.some(col => col.name === 'email')) {
+        authDb.run('ALTER TABLE users ADD COLUMN email TEXT');
+      }
+      if (!columns.some(col => col.name === 'role')) {
+        authDb.run("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'usuario'");
+      }
+      if (!columns.some(col => col.name === 'status')) {
+        authDb.run("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendente'");
+      }
+      if (!columns.some(col => col.name === 'incident_count')) {
+        authDb.run('ALTER TABLE users ADD COLUMN incident_count INTEGER DEFAULT 0');
+      }
+      if (!columns.some(col => col.name === 'created_at')) {
+        authDb.run("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+      }
+      if (!columns.some(col => col.name === 'updated_at')) {
+        authDb.run("ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+      }
     }
   });
 
@@ -100,11 +117,20 @@ dataDb.serialize(() => {
     hora TEXT NOT NULL,
     empresa_id INTEGER NOT NULL,
     created_by INTEGER,
+    status TEXT DEFAULT 'pendente',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (empresa_id) REFERENCES empresas(id),
     FOREIGN KEY (created_by) REFERENCES users(id)
   )`);
+
+  dataDb.all("PRAGMA table_info(incidents)", (err, columns) => {
+    if (!err && columns) {
+      if (!columns.some(col => col.name === 'status')) {
+        dataDb.run("ALTER TABLE incidents ADD COLUMN status TEXT DEFAULT 'pendente'");
+      }
+    }
+  });
 
   // Seed companies and keep names in the required format
   dataDb.get("SELECT COUNT(*) as count FROM empresas", (err, row) => {
@@ -112,10 +138,6 @@ dataDb.serialize(() => {
       dataDb.run("INSERT INTO empresas (nome) VALUES (?)", ['Colégio Adventista do Campo Limpo']);
       dataDb.run("INSERT INTO empresas (nome) VALUES (?)", ['Escola Adventista da Alvorada']);
       dataDb.run("INSERT INTO empresas (nome) VALUES (?)", ['Colégio Adventista do Pirajuçara']);
-    } else {
-      dataDb.run("UPDATE empresas SET nome = ? WHERE id = 1", ['Colégio Adventista do Campo Limpo']);
-      dataDb.run("UPDATE empresas SET nome = ? WHERE id = 2", ['Escola Adventista da Alvorada']);
-      dataDb.run("UPDATE empresas SET nome = ? WHERE id = 3", ['Colégio Adventista do Pirajuçara']);
     }
   });
 });
