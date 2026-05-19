@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { Lock, Mail, Building2 } from 'lucide-react';
+import { Lock, Mail, Building2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -44,88 +44,102 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-blue-950 text-white">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
       <div className="w-full max-w-md">
-        <div className="card bg-blue-900 border border-blue-800 text-white shadow-2xl shadow-blue-950/40">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-blue-700/30 border border-blue-600/50 mb-4">
-              <Building2 className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">SIGE</h1>
-            <p className="text-white/80">Sistema Integrado de Gestão Escolar</p>
+        {/* Logo & Brand */}
+        <div className="text-center mb-10 animate-fadeIn">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white mb-4 shadow-lg">
+            <Building2 size={32} strokeWidth={1.5} />
           </div>
+          <h1 className="text-4xl font-bold text-primary-900 mb-2">SIGE</h1>
+          <p className="text-slate-600 font-medium">Sistema Integrado de Gestão Escolar</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card */}
+        <div className="card border-0 shadow-xl">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email/Username */}
             <div>
-              <label htmlFor="email" className="label">
-                <Mail className="w-4 h-4 inline mr-2" />
+              <label htmlFor="email" className="label flex items-center gap-2">
+                <Mail size={16} className="text-primary-600" />
                 Email ou Usuário
               </label>
               <input
                 id="email"
                 type="text"
-                className="input text-white placeholder:text-white"
+                className="input"
                 placeholder="seu.email@escola.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoFocus
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="label">
-                <Lock className="w-4 h-4 inline mr-2" />
+              <label htmlFor="password" className="label flex items-center gap-2">
+                <Lock size={16} className="text-primary-600" />
                 Senha
               </label>
               <input
                 id="password"
                 type="password"
-                className="input text-white placeholder:text-white"
-                placeholder="••••••••"
+                className="input"
+                placeholder="Sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
 
+            {/* Escola */}
             <div>
-              <label htmlFor="escola" className="label">
-                <Building2 className="w-4 h-4 inline mr-2" />
+              <label htmlFor="escola" className="label flex items-center gap-2">
+                <Building2 size={16} className="text-primary-600" />
                 Escola
               </label>
               <select
                 id="escola"
-                className="input text-white"
+                className="input appearance-none cursor-pointer"
                 value={empresaId}
                 onChange={(e) => setEmpresaId(e.target.value)}
               >
-                <option
-                  value=""
-                  style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
-                >
-                  Selecione uma escola (Super Admin sem seleção)
+                <option value="">
+                  Selecione uma escola
                 </option>
                 {schools.map((school) => (
-                  <option key={school.id} value={school.id} className="bg-blue-700 text-white">
+                  <option key={school.id} value={school.id}>
                     {school.nome}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Error Alert */}
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-sm">
-                {error}
+              <div className="alert alert-error">
+                <AlertCircle size={18} />
+                <div>
+                  <p className="font-semibold">Falha no acesso</p>
+                  <p className="text-sm mt-0.5">{error}</p>
+                </div>
               </div>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full rounded-lg bg-white text-blue-950 font-semibold px-4 py-3 shadow-lg shadow-blue-950/20 transition hover:bg-slate-100"
               disabled={loading}
+              className="w-full btn btn-primary justify-center py-3 text-base disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? 'Autenticando...' : 'Entrar no Sistema'}
             </button>
+
+            {/* Footer */}
+            <div className="text-center text-xs text-slate-500 pt-4 border-t border-slate-200">
+              © 2026 SIGE. Todos os direitos reservados.
+            </div>
           </form>
         </div>
       </div>

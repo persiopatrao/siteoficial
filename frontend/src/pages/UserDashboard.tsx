@@ -1,8 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { LogOut, Plus, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Plus, AlertCircle, Eye, EyeOff, FileText, Clock, BookOpen } from 'lucide-react';
+import Header from '../components/Header';
+import StatCard from '../components/StatCard';
+import PageTitle from '../components/PageTitle';
+import Tabs from '../components/Tabs';
+import Alert from '../components/Alert';
 
 interface Occurrence {
   id: number;
@@ -16,8 +20,7 @@ interface Occurrence {
 }
 
 export default function UserDashboard() {
-  const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const { occurrences, createOccurrence, loading } = useData();
   const [tab, setTab] = useState<'create' | 'my-reports'>('create');
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -55,12 +58,6 @@ export default function UserDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    console.log('[ACTION] Usuário desconectando');
-    logout();
-    navigate('/');
-  };
-
   const myOccurrences = occurrences.filter((o: Occurrence) => o.created_by === Number(user?.id)) || [];
 
   const stats = {
@@ -69,68 +66,52 @@ export default function UserDashboard() {
     approved: myOccurrences.filter((o: Occurrence) => o.status === 'approved' || o.status === 'aprovado').length,
   };
 
+  const tabs = [
+    { id: 'create', label: 'Nova Ocorrência', icon: Plus },
+    { id: 'my-reports', label: 'Minhas Ocorrências', icon: FileText, badge: stats.total },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900">
-      <nav className="bg-white/5 backdrop-blur border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-accent-50">SIGE</h1>
-            <p className="text-xs text-accent-400">Sistema Integrado de Gestão Escolar</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="badge bg-blue-500/40">Usuário Comum</span>
-            <span className="text-accent-300">{user?.username}</span>
-            <button onClick={handleLogout} className="btn-ghost">
-              <LogOut className="w-4 h-4" />
-              Sair
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+      <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-4 mb-8 border-b border-white/10 flex-wrap">
-          <button
-            onClick={() => setTab('create')}
-            className={`px-4 py-3 font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              tab === 'create'
-                ? 'border-blue-400 text-blue-300'
-                : 'border-transparent text-accent-400 hover:text-accent-300'
-            }`}
-          >
-            <Plus className="w-4 h-4" />
-            Nova Ocorrência
-          </button>
-          <button
-            onClick={() => setTab('my-reports')}
-            className={`px-4 py-3 font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              tab === 'my-reports'
-                ? 'border-blue-400 text-blue-300'
-                : 'border-transparent text-accent-400 hover:text-accent-300'
-            }`}
-          >
-            <AlertCircle className="w-4 h-4" />
-            Minhas Ocorrências ({stats.total})
-          </button>
-        </div>
+        {/* Page Title */}
+        <PageTitle
+          icon={FileText}
+          title="Painel de Ocorrências"
+          subtitle="Registre e acompanhe ocorrências escolares"
+        />
 
+        {/* Tabs */}
+        <Tabs
+          tabs={tabs}
+          activeTab={tab}
+          onTabChange={(tabId) => setTab(tabId as 'create' | 'my-reports')}
+        />
+
+        {/* Create Tab */}
         {tab === 'create' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slideUp">
+            {/* Form */}
             <div className="lg:col-span-2">
-              <div className="card">
-                <div className="flex items-center gap-3 mb-6">
-                  <Plus className="w-6 h-6 text-blue-300" />
-                  <h2 className="text-2xl font-bold text-accent-50">Registrar Ocorrência</h2>
+              <div className="card border-0 shadow-lg">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900">Registrar Ocorrência</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Preencha os dados da ocorrência que será enviada para análise
+                  </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Student and Class */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="label">Nome do Aluno</label>
                       <input
                         type="text"
                         className="input"
-                        placeholder="João Silva"
+                        placeholder="Ex: João Silva"
                         value={formData.aluno}
                         onChange={(e) => setFormData({ ...formData, aluno: e.target.value })}
                         required
@@ -141,7 +122,7 @@ export default function UserDashboard() {
                       <input
                         type="text"
                         className="input"
-                        placeholder="5º Ano A"
+                        placeholder="Ex: 5º Ano A"
                         value={formData.turma}
                         onChange={(e) => setFormData({ ...formData, turma: e.target.value })}
                         required
@@ -149,20 +130,22 @@ export default function UserDashboard() {
                     </div>
                   </div>
 
+                  {/* Description */}
                   <div>
                     <label className="label">Descrição da Ocorrência</label>
                     <textarea
-                      className="input resize-none h-32"
-                      placeholder="Descreva brevemente o ocorrido..."
+                      className="input resize-none h-32 font-sans"
+                      placeholder="Descreva brevemente o ocorrido, incluindo contexto, comportamento e ações tomadas..."
                       value={formData.descricao}
                       onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                       required
                     />
                   </div>
 
+                  {/* Date and Time */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="label">Data</label>
+                      <label className="label">Data do Evento</label>
                       <input
                         type="date"
                         className="input"
@@ -172,7 +155,7 @@ export default function UserDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="label">Hora</label>
+                      <label className="label">Hora do Evento</label>
                       <input
                         type="time"
                         className="input"
@@ -183,127 +166,177 @@ export default function UserDashboard() {
                     </div>
                   </div>
 
+                  {/* Alerts */}
                   {error && (
-                    <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      {error}
-                    </div>
+                    <Alert type="error" title="Erro ao registrar" message={error} dismissible />
                   )}
 
                   {success && (
-                    <div className="p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 flex items-center gap-2">
-                      ✓ {success}
-                    </div>
+                    <Alert type="success" title="Sucesso!" message={success} dismissible />
                   )}
 
-                  <button type="submit" className="btn-primary w-full" disabled={loading}>
-                    {loading ? 'Salvando...' : 'Registrar Ocorrência'}
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn btn-primary justify-center py-3 text-base disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Registrando...' : 'Registrar Ocorrência'}
                   </button>
 
-                  <div className="text-xs text-accent-400 mt-4 p-3 rounded bg-white/5">
-                    <strong>ℹ️ Informação:</strong> Sua ocorrência será enviada ao administrador da sua unidade para análise e aprovação.
+                  {/* Info Box */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-slate-700">
+                      <strong>ℹ️ Informação:</strong> Sua ocorrência será enviada ao administrador da sua unidade para análise e aprovação.
+                    </p>
                   </div>
                 </form>
               </div>
             </div>
 
-            <div>
-              <div className="card">
-                <h3 className="text-lg font-bold text-accent-50 mb-4">Resumo</h3>
-                <div className="space-y-3">
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-accent-400">Total de Ocorrências</p>
-                    <p className="text-2xl font-bold text-blue-300">{stats.total}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-accent-400">Pendentes</p>
-                    <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-accent-400">Aprovadas</p>
-                    <p className="text-2xl font-bold text-blue-400">{stats.approved}</p>
-                  </div>
-                </div>
+            {/* Stats Sidebar */}
+            <div className="space-y-6">
+              <StatCard
+                title="Total de Ocorrências"
+                value={stats.total}
+                icon={FileText}
+                color="primary"
+              />
 
-                <div className="mt-4 p-3 rounded bg-white/5 text-xs text-accent-400 space-y-1">
-                  <p><strong>Status:</strong> Online</p>
-                  <p><strong>Sincronização:</strong> OK</p>
-                  <p><strong>Usuário:</strong> {user?.email}</p>
+              <StatCard
+                title="Pendentes"
+                value={stats.pending}
+                icon={Clock}
+                color="orange"
+              />
+
+              <StatCard
+                title="Aprovadas"
+                value={stats.approved}
+                icon={BookOpen}
+                color="emerald"
+              />
+
+              {/* Info Card */}
+              <div className="card border-0 shadow-lg">
+                <h3 className="font-semibold text-slate-900 mb-4">Informações</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-slate-500">Status</p>
+                    <p className="font-semibold text-emerald-600">● Online</p>
+                  </div>
+                  <div className="border-t border-slate-200 pt-3">
+                    <p className="text-slate-500">Usuário</p>
+                    <p className="font-semibold text-slate-900 truncate">{user?.email}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* My Reports Tab */}
         {tab === 'my-reports' && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="card">
-                <p className="text-accent-400 text-sm">Total</p>
-                <p className="text-3xl font-bold text-blue-300">{stats.total}</p>
-              </div>
-              <div className="card">
-                <p className="text-accent-400 text-sm">Pendentes</p>
-                <p className="text-3xl font-bold text-yellow-400">{stats.pending}</p>
-              </div>
-              <div className="card">
-                <p className="text-accent-400 text-sm">Aprovadas</p>
-                <p className="text-3xl font-bold text-blue-400">{stats.approved}</p>
-              </div>
+          <div className="animate-slideUp space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard
+                title="Total"
+                value={stats.total}
+                icon={FileText}
+                color="primary"
+              />
+              <StatCard
+                title="Pendentes"
+                value={stats.pending}
+                icon={Clock}
+                color="orange"
+              />
+              <StatCard
+                title="Aprovadas"
+                value={stats.approved}
+                icon={BookOpen}
+                color="emerald"
+              />
             </div>
 
-            <div className="space-y-3">
-              {myOccurrences.length === 0 ? (
-                <div className="card text-center py-8">
-                  <AlertCircle className="w-12 h-12 text-accent-400 mx-auto mb-3 opacity-50" />
-                  <p className="text-accent-400">Nenhuma ocorrência registrada</p>
-                  <button
-                    onClick={() => setTab('create')}
-                    className="btn-primary text-sm mt-3"
-                  >
-                    Criar Primeira Ocorrência
-                  </button>
-                </div>
-              ) : (
-                myOccurrences.map((occ) => (
-                  <div key={occ.id} className="card">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-bold text-accent-50">{occ.aluno}</h3>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            occ.status === 'approved' || occ.status === 'aprovado'
-                              ? 'bg-blue-500/20 text-blue-300'
-                              : 'bg-yellow-500/20 text-yellow-300'
-                          }`}>
-                            {occ.status === 'approved' || occ.status === 'aprovado' ? 'Aprovada' : 'Pendente'}
-                          </span>
+            {/* Occurrences List */}
+            {myOccurrences.length === 0 ? (
+              <div className="card border-0 shadow-lg text-center py-12">
+                <AlertCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500 font-semibold mb-2">Nenhuma ocorrência registrada</p>
+                <p className="text-sm text-slate-400 mb-6">
+                  Você ainda não registrou nenhuma ocorrência
+                </p>
+                <button
+                  onClick={() => setTab('create')}
+                  className="btn btn-primary inline-flex"
+                >
+                  <Plus size={18} />
+                  Criar Primeira Ocorrência
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myOccurrences.map((occ) => {
+                  const isApproved = occ.status === 'approved' || occ.status === 'aprovado';
+                  return (
+                    <div key={occ.id} className="card border-0 shadow-md hover:shadow-lg transition-shadow">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-bold text-slate-900 text-lg">{occ.aluno}</h3>
+                            <span
+                              className={`badge px-3 py-1 text-xs font-semibold ${
+                                isApproved ? 'badge-success' : 'badge-warning'
+                              }`}
+                            >
+                              {isApproved ? 'Aprovada' : 'Pendente'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm mt-3">
+                            <div>
+                              <p className="text-slate-500">Turma</p>
+                              <p className="font-semibold text-slate-900">{occ.turma}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-500">Data e Hora</p>
+                              <p className="font-semibold text-slate-900">
+                                {occ.data} às {occ.hora}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-accent-400">Turma: <span className="text-accent-100">{occ.turma}</span></p>
-                        <p className="text-sm text-accent-400">{occ.data} às {occ.hora}</p>
+                        <button
+                          onClick={() => setExpandedId(expandedId === occ.id ? null : occ.id)}
+                          className="btn btn-secondary"
+                          title={expandedId === occ.id ? 'Ocultar detalhes' : 'Ver detalhes'}
+                        >
+                          {expandedId === occ.id ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setExpandedId(expandedId === occ.id ? null : occ.id)}
-                        className="btn-ghost text-sm ml-2"
-                      >
-                        {expandedId === occ.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
 
-                    {expandedId === occ.id && (
-                      <div className="mt-4 pt-4 border-t border-white/10">
-                        <p className="text-sm text-accent-300 mb-3">
-                          <strong>Descrição:</strong> {occ.descricao}
-                        </p>
-                        <pre className="bg-black/30 p-2 rounded text-xs text-blue-300 overflow-x-auto">
-                          {JSON.stringify(occ, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+                      {/* Expanded Details */}
+                      {expandedId === occ.id && (
+                        <div className="mt-4 pt-4 border-t border-slate-200 animate-slideUp">
+                          <div className="mb-4">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                              Descrição
+                            </p>
+                            <p className="text-slate-700 text-sm leading-relaxed">{occ.descricao}</p>
+                          </div>
+                          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                            <p className="text-xs font-mono text-slate-600">
+                              ID: {occ.id} • Criada por: {occ.created_by}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </main>
