@@ -1,9 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { LogOut, BarChart3, AlertCircle, Users, Check, X, Eye, EyeOff } from 'lucide-react';
+import { BarChart3, AlertCircle, Users, Check, X, Eye, EyeOff, Plus } from 'lucide-react';
 
+import Header from '../components/Header';
+import StatCard from '../components/StatCard';
+import PageTitle from '../components/PageTitle';
+import Tabs from '../components/Tabs';
+import Alert from '../components/Alert';
 import API_URL from '../api';
 
 interface Occurrence {
@@ -28,8 +32,7 @@ interface AdminUser {
 }
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const { logout, user, token } = useAuth();
+  const { user, token } = useAuth();
   const { occurrences, createOccurrence, refreshOccurrences } = useData();
   const [tab, setTab] = useState<'dashboard' | 'occurrences' | 'users'>('dashboard');
   const [loading, setLoading] = useState(false);
@@ -59,7 +62,6 @@ export default function AdminDashboard() {
       if (response.ok) {
         const data = await response.json();
         const allUsers = Array.isArray(data) ? data : data.users || [];
-        // Filtrar apenas usuários da mesma escola
         const filtered = allUsers.filter((u: AdminUser) => u.empresa_id === user.empresa_id);
         setSchoolUsers(filtered);
         console.log('[LOAD] Usuários da escola carregados:', filtered.length);
@@ -101,12 +103,6 @@ export default function AdminDashboard() {
     } finally {
       setUsersLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    console.log('[ACTION] Admin desconectando');
-    logout();
-    navigate('/');
   };
 
   const handleApprove = async (id: number) => {
@@ -163,7 +159,7 @@ export default function AdminDashboard() {
     try {
       await createOccurrence(newIncident);
       await refreshOccurrences();
-      setCreateSuccess('Ocorrência criada com sucesso e enviada ao responsável da escola.');
+      setCreateSuccess('Ocorrência criada com sucesso!');
       setNewIncident({
         aluno: '',
         turma: '',
@@ -189,426 +185,228 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900">
-      <nav className="bg-white/5 backdrop-blur border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-accent-50">SIGE - Admin</h1>
-            <p className="text-xs text-accent-400">Gestão de Ocorrências</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="badge bg-blue-500/40">Administrador</span>
-            <span className="text-accent-300">{user?.username}</span>
-            <button onClick={handleLogout} className="btn-ghost">
-              <LogOut className="w-4 h-4" />
-              Sair
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+      <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-4 mb-8 border-b border-white/10 flex-wrap">
-          <button
-            onClick={() => setTab('dashboard')}
-            className={`px-4 py-3 font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              tab === 'dashboard'
-                ? 'border-blue-400 text-blue-300'
-                : 'border-transparent text-accent-400 hover:text-accent-300'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            Dashboard
-          </button>
-          <button
-            onClick={() => setTab('occurrences')}
-            className={`px-4 py-3 font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              tab === 'occurrences'
-                ? 'border-blue-400 text-blue-300'
-                : 'border-transparent text-accent-400 hover:text-accent-300'
-            }`}
-          >
-            <AlertCircle className="w-4 h-4" />
-            Ocorrências ({stats.total})
-          </button>
-          <button
-            onClick={() => setTab('users')}
-            className={`px-4 py-3 font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              tab === 'users'
-                ? 'border-blue-400 text-blue-300'
-                : 'border-transparent text-accent-400 hover:text-accent-300'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Usuários
-          </button>
-        </div>
+        <PageTitle
+          icon={BarChart3}
+          title="Painel Administrativo"
+          subtitle="Gestão de ocorrências e usuários"
+        />
+
+        <Tabs
+          tabs={[
+            { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+            { id: 'occurrences', label: 'Ocorrências', icon: AlertCircle, badge: stats.total },
+            { id: 'users', label: 'Usuários', icon: Users },
+          ]}
+          activeTab={tab}
+          onTabChange={(tabId) => setTab(tabId as 'dashboard' | 'occurrences' | 'users')}
+        />
 
         {tab === 'dashboard' && (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="card">
-                <p className="text-accent-400 text-sm mb-2">Total</p>
-                <p className="text-3xl font-bold text-blue-300">{stats.total}</p>
-              </div>
-              <div className="card">
-                <p className="text-accent-400 text-sm mb-2">Pendentes</p>
-                <p className="text-3xl font-bold text-yellow-400">{stats.pending}</p>
-              </div>
-              <div className="card">
-                <p className="text-accent-400 text-sm mb-2">Aprovadas</p>
-                <p className="text-3xl font-bold text-blue-400">{stats.approved}</p>
-              </div>
-              <div className="card">
-                <p className="text-accent-400 text-sm mb-2">Hoje</p>
-                <p className="text-3xl font-bold text-purple-400">{stats.today}</p>
-              </div>
+          <div className="animate-slideUp space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard title="Total" value={stats.total} icon={AlertCircle} color="primary" />
+              <StatCard title="Pendentes" value={stats.pending} icon={AlertCircle} color="orange" />
+              <StatCard title="Aprovadas" value={stats.approved} icon={Check} color="emerald" />
+              <StatCard title="Hoje" value={stats.today} icon={BarChart3} color="primary" />
             </div>
 
-            <div className="card">
-              <h3 className="text-lg font-bold text-accent-50 mb-4">Últimas Ocorrências</h3>
-              <div className="space-y-3">
-                {occsData.slice(0, 5).map((occ) => (
-                  <div key={occ.id} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-accent-50">{occ.aluno}</p>
-                        <p className="text-xs text-accent-400">{occ.turma} - {occ.data} às {occ.hora}</p>
-                      </div>
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        occ.status === 'approved' || occ.status === 'aprovado'
-                          ? 'bg-blue-500/20 text-blue-300'
-                          : 'bg-yellow-500/20 text-yellow-300'
-                      }`}>
-                        {occ.status === 'approved' || occ.status === 'aprovado' ? 'Aprovada' : 'Pendente'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            <div className="card border-0 shadow-lg">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Últimas Ocorrências</h2>
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Aluno</th>
+                      <th>Turma</th>
+                      <th>Data</th>
+                      <th>Status</th>
+                      <th>Criado por</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {occsData.slice(0, 8).map((occ) => (
+                      <tr key={occ.id}>
+                        <td className="font-semibold text-slate-900">{occ.aluno}</td>
+                        <td>{occ.turma}</td>
+                        <td>{occ.data} {occ.hora}</td>
+                        <td>
+                          <span className={`badge ${
+                            occ.status === 'approved' || occ.status === 'aprovado' ? 'badge-success' :
+                            occ.status === 'rejected' || occ.status === 'rejeitado' ? 'badge-danger' :
+                            'badge-warning'
+                          }`}>
+                            {occ.status === 'approved' || occ.status === 'aprovado' ? 'Aprovada' :
+                             occ.status === 'rejected' || occ.status === 'rejeitado' ? 'Rejeitada' :
+                             'Pendente'}
+                          </span>
+                        </td>
+                        <td className="text-sm text-slate-600">{occ.created_by_name || `ID ${occ.created_by}`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
 
         {tab === 'occurrences' && (
-          <div className="space-y-4">
-            <div className="flex flex-col xl:flex-row gap-3 mb-4 justify-between items-start">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-1">
-                <div className="card min-w-[180px]">
-                  <p className="text-xs text-accent-400">Pendentes</p>
-                  <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
-                </div>
-                <div className="card min-w-[180px]">
-                  <p className="text-xs text-accent-400">Aprovadas</p>
-                  <p className="text-2xl font-bold text-blue-400">{stats.approved}</p>
-                </div>
-                <div className="card min-w-[180px]">
-                  <p className="text-xs text-accent-400">Rejeitadas</p>
-                  <p className="text-2xl font-bold text-red-400">{stats.rejected}</p>
-                </div>
-                <div className="card min-w-[180px]">
-                  <p className="text-xs text-accent-400">Total</p>
-                  <p className="text-2xl font-bold text-blue-300">{stats.total}</p>
-                </div>
+          <div className="animate-slideUp space-y-6">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'pending', label: 'Pendentes', color: 'badge-warning' },
+                  { value: 'approved', label: 'Aprovadas', color: 'badge-success' },
+                  { value: 'rejected', label: 'Rejeitadas', color: 'badge-danger' },
+                  { value: 'all', label: 'Todas', color: 'badge-primary' },
+                ].map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() => setOccFilter(filter.value as typeof occFilter)}
+                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                      occFilter === filter.value ? `${filter.color}` : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
               </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setOccFilter('pending')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${occFilter === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' : 'bg-white/5 text-accent-400 border border-white/10'}`}
-                  >
-                    Pendentes
-                  </button>
-                  <button
-                    onClick={() => setOccFilter('approved')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${occFilter === 'approved' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-white/5 text-accent-400 border border-white/10'}`}
-                  >
-                    Aprovadas
-                  </button>
-                  <button
-                    onClick={() => setOccFilter('rejected')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${occFilter === 'rejected' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-white/5 text-accent-400 border border-white/10'}`}
-                  >
-                    Rejeitadas
-                  </button>
-                  <button
-                    onClick={() => setOccFilter('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${occFilter === 'all' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-white/5 text-accent-400 border border-white/10'}`}
-                  >
-                    Todas
-                  </button>
-                </div>
-                <button
-                  onClick={() => setShowCreateForm(!showCreateForm)}
-                  className="btn-primary text-sm self-stretch"
-                >
-                  {showCreateForm ? 'Fechar formulário' : 'Criar Ocorrência'}
-                </button>
-              </div>
+              <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn btn-primary">
+                <Plus size={18} />
+                {showCreateForm ? 'Fechar' : 'Nova Ocorrência'}
+              </button>
             </div>
 
             {showCreateForm && (
-              <div className="card">
-                <h3 className="text-lg font-bold text-accent-50 mb-4">Criar nova ocorrência</h3>
-                <form onSubmit={handleCreateIncident} className="space-y-4">
+              <div className="card border-0 shadow-lg animate-slideUp">
+                <h2 className="text-xl font-bold text-slate-900 mb-6">Criar Ocorrência</h2>
+                <form onSubmit={handleCreateIncident} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="label">Nome do aluno</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={newIncident.aluno}
-                        onChange={(e) => setNewIncident({ ...newIncident, aluno: e.target.value })}
-                        required
-                      />
+                      <label className="label">Nome do Aluno</label>
+                      <input type="text" className="input" placeholder="Ex: João Silva" value={newIncident.aluno} onChange={(e) => setNewIncident({ ...newIncident, aluno: e.target.value })} required />
                     </div>
                     <div>
                       <label className="label">Turma/Série</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={newIncident.turma}
-                        onChange={(e) => setNewIncident({ ...newIncident, turma: e.target.value })}
-                        required
-                      />
+                      <input type="text" className="input" placeholder="Ex: 5º Ano A" value={newIncident.turma} onChange={(e) => setNewIncident({ ...newIncident, turma: e.target.value })} required />
                     </div>
                   </div>
-
                   <div>
                     <label className="label">Descrição</label>
-                    <textarea
-                      className="input resize-none h-28"
-                      value={newIncident.descricao}
-                      onChange={(e) => setNewIncident({ ...newIncident, descricao: e.target.value })}
-                      required
-                    />
+                    <textarea className="input resize-none h-32 font-sans" placeholder="Descreva os detalhes..." value={newIncident.descricao} onChange={(e) => setNewIncident({ ...newIncident, descricao: e.target.value })} required />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="label">Data</label>
-                      <input
-                        type="date"
-                        className="input"
-                        value={newIncident.data}
-                        onChange={(e) => setNewIncident({ ...newIncident, data: e.target.value })}
-                        required
-                      />
+                      <input type="date" className="input" value={newIncident.data} onChange={(e) => setNewIncident({ ...newIncident, data: e.target.value })} required />
                     </div>
                     <div>
                       <label className="label">Hora</label>
-                      <input
-                        type="time"
-                        className="input"
-                        value={newIncident.hora}
-                        onChange={(e) => setNewIncident({ ...newIncident, hora: e.target.value })}
-                        required
-                      />
+                      <input type="time" className="input" value={newIncident.hora} onChange={(e) => setNewIncident({ ...newIncident, hora: e.target.value })} required />
                     </div>
                   </div>
-
-                  {createError && (
-                    <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300">
-                      {createError}
-                    </div>
-                  )}
-                  {createSuccess && (
-                    <div className="p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300">
-                      {createSuccess}
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn-primary w-full" disabled={loading}>
-                    {loading ? 'Enviando...' : 'Enviar ocorrência'}
+                  {createError && <Alert type="error" title="Erro" message={createError} dismissible />}
+                  {createSuccess && <Alert type="success" title="Sucesso!" message={createSuccess} dismissible />}
+                  <button type="submit" disabled={loading} className="w-full btn btn-primary justify-center py-3 disabled:opacity-60">
+                    {loading ? 'Criando...' : 'Criar Ocorrência'}
                   </button>
                 </form>
               </div>
             )}
 
-            <div className="space-y-3">
-              {occsData
-                .filter((occ) => {
-                  if (occFilter === 'all') return true;
-                  if (occFilter === 'pending') return !occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected' && occ.status !== 'rejeitado');
-                  if (occFilter === 'approved') return occ.status === 'approved' || occ.status === 'aprovado';
-                  return occ.status === 'rejected' || occ.status === 'rejeitado';
-                })
-                .map((occ) => (
-                  <div key={occ.id} className="card">
-                  <div className="flex flex-col gap-3 md:gap-0 md:flex-row md:items-start md:justify-between">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h3 className="font-bold text-accent-50">{occ.aluno}</h3>
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          occ.status === 'approved' || occ.status === 'aprovado'
-                            ? 'bg-blue-500/20 text-blue-300'
-                            : occ.status === 'rejected' || occ.status === 'rejeitado'
-                            ? 'bg-red-500/20 text-red-300'
-                            : 'bg-yellow-500/20 text-yellow-300'
-                        }`}>
-                          {occ.status === 'approved' || occ.status === 'aprovado'
-                            ? 'Aprovada'
-                            : occ.status === 'rejected' || occ.status === 'rejeitado'
-                            ? 'Rejeitada'
-                            : 'Pendente'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-accent-400">Criada por: <span className="text-accent-100">{occ.created_by_name || `ID ${occ.created_by}`}</span></p>
-                      <p className="text-sm text-accent-400">Turma: <span className="text-accent-100">{occ.turma}</span></p>
-                      <p className="text-sm text-accent-400">{occ.data} às {occ.hora}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 items-center">
-                      {(!occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected' && occ.status !== 'rejeitado')) && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(occ.id)}
-                            className="btn-primary text-sm"
-                            disabled={loading}
-                          >
-                            <Check className="w-4 h-4" />
-                            Aprovar
-                          </button>
-                          <button
-                            onClick={() => handleReject(occ.id)}
-                            className="btn-ghost text-red-400 border border-red-500/30 text-sm"
-                            disabled={loading}
-                          >
-                            <X className="w-4 h-4" />
-                            Rejeitar
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => setExpandedId(expandedId === occ.id ? null : occ.id)}
-                        className="btn-ghost text-sm"
-                      >
-                        {expandedId === occ.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {expandedId === occ.id && (
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                      <p className="text-sm text-accent-300 mb-3">
-                        <strong>Descrição:</strong> {occ.descricao}
-                      </p>
-                      <pre className="bg-black/30 p-2 rounded text-xs text-blue-300 mb-4 overflow-x-auto">
-                        {JSON.stringify(occ, null, 2)}
-                      </pre>
-
-                      {(!occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected' && occ.status !== 'rejeitado')) && (
+            <div className="space-y-4">
+              {occsData.filter((occ) => occFilter === 'all' || (occFilter === 'pending' && (!occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected'))) || (occFilter === 'approved' && (occ.status === 'approved' || occ.status === 'aprovado')) || (occFilter === 'rejected' && occ.status === 'rejected')).length === 0 ? (
+                <div className="card border-0 shadow-lg text-center py-12">
+                  <AlertCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 font-semibold">Nenhuma ocorrência neste filtro</p>
+                </div>
+              ) : (
+                occsData
+                  .filter((occ) => occFilter === 'all' || (occFilter === 'pending' && (!occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected'))) || (occFilter === 'approved' && (occ.status === 'approved' || occ.status === 'aprovado')) || (occFilter === 'rejected' && occ.status === 'rejected'))
+                  .map((occ) => (
+                    <div key={occ.id} className="card border-0 shadow-md hover:shadow-lg transition-shadow">
+                      <div className="flex items-start justify-between gap-4 flex-wrap md:flex-nowrap">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h3 className="font-bold text-slate-900">{occ.aluno}</h3>
+                            <span className={`badge ${occ.status === 'approved' || occ.status === 'aprovado' ? 'badge-success' : occ.status === 'rejected' || occ.status === 'rejeitado' ? 'badge-danger' : 'badge-warning'}`}>
+                              {occ.status === 'approved' || occ.status === 'aprovado' ? 'Aprovada' : occ.status === 'rejected' || occ.status === 'rejeitado' ? 'Rejeitada' : 'Pendente'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-600">Turma: {occ.turma} | {occ.data} {occ.hora}</p>
+                        </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApprove(occ.id)}
-                            className="btn-primary flex-1 text-sm"
-                            disabled={loading}
-                          >
-                            <Check className="w-4 h-4" />
-                            Aprovar
+                          {(!occ.status || (occ.status !== 'approved' && occ.status !== 'aprovado' && occ.status !== 'rejected')) && (
+                            <>
+                              <button onClick={() => handleApprove(occ.id)} className="btn btn-primary text-sm" disabled={loading}>
+                                <Check size={16} />
+                              </button>
+                              <button onClick={() => handleReject(occ.id)} className="btn btn-secondary text-sm" disabled={loading}>
+                                <X size={16} />
+                              </button>
+                            </>
+                          )}
+                          <button onClick={() => setExpandedId(expandedId === occ.id ? null : occ.id)} className="btn btn-secondary">
+                            {expandedId === occ.id ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
-                          <button
-                            onClick={() => handleReject(occ.id)}
-                            className="btn-ghost text-red-400 flex-1 text-sm border border-red-500/30"
-                            disabled={loading}
-                          >
-                            <X className="w-4 h-4" />
-                            Rejeitar
-                          </button>
+                        </div>
+                      </div>
+                      {expandedId === occ.id && (
+                        <div className="mt-4 pt-4 border-t border-slate-200 animate-slideUp">
+                          <p className="text-slate-700 text-sm mb-3">{occ.descricao}</p>
+                          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                            <p className="text-xs font-mono text-slate-600">ID: {occ.id}</p>
+                          </div>
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  ))
+              )}
             </div>
           </div>
         )}
 
         {tab === 'users' && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="card">
-                <p className="text-xs text-accent-400">Usuários Ativos</p>
-                <p className="text-2xl font-bold text-blue-300">
-                  {schoolUsers.filter(u => u.status === 'active' || u.status === 'aprovado').length}
-                </p>
-              </div>
-              <div className="card">
-                <p className="text-xs text-accent-400">Pendentes de Aprovação</p>
-                <p className="text-2xl font-bold text-yellow-400">
-                  {schoolUsers.filter(u => u.status === 'pending' || u.status === 'pendente').length}
-                </p>
-              </div>
+          <div className="animate-slideUp space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <StatCard title="Ativos" value={schoolUsers.filter(u => u.status === 'active' || u.status === 'aprovado').length} icon={Users} color="emerald" />
+              <StatCard title="Pendentes" value={schoolUsers.filter(u => u.status === 'pending' || u.status === 'pendente').length} icon={AlertCircle} color="orange" />
             </div>
-
-            <button
-              onClick={() => fetchSchoolUsers()}
-              className="btn-secondary text-sm w-full"
-              disabled={usersLoading}
-            >
+            <button onClick={() => fetchSchoolUsers()} className="w-full btn btn-secondary" disabled={usersLoading}>
               {usersLoading ? 'Atualizando...' : 'Atualizar Usuários'}
             </button>
-
-            <div className="space-y-3">
-              {schoolUsers.length === 0 ? (
-                <div className="card text-center py-8">
-                  <p className="text-accent-400">Nenhum usuário nesta unidade</p>
-                </div>
-              ) : (
-                <>
-                  {schoolUsers.filter(u => u.status === 'pending' || u.status === 'pendente').length > 0 && (
-                    <>
-                      <h3 className="font-bold text-yellow-400 text-sm mt-4">Usuários Pendentes</h3>
-                      {schoolUsers.filter(u => u.status === 'pending' || u.status === 'pendente').map(user => (
-                        <div key={user.id} className="card">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <p className="font-semibold text-accent-50">{user.username}</p>
-                              <p className="text-xs text-accent-400">{user.email}</p>
-                              <p className="text-xs text-accent-400 mt-1">
-                                Cargo: <span className="font-medium">{user.role === 'admin' ? 'Administrador' : 'Usuário Comum'}</span>
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => handleApproveUser(user.id)}
-                              className="btn-primary text-sm"
-                              disabled={usersLoading}
-                              title="Aprovar usuário"
-                            >
-                              <Check className="w-4 h-4" />
-                              Aprovar
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-
-                  {schoolUsers.filter(u => u.status === 'active' || u.status === 'aprovado').length > 0 && (
-                    <>
-                      <h3 className="font-bold text-blue-300 text-sm mt-4">Usuários Ativos</h3>
-                      {schoolUsers.filter(u => u.status === 'active' || u.status === 'aprovado').map(user => (
-                        <div key={user.id} className="card">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="font-semibold text-accent-50">{user.username}</p>
-                              <p className="text-xs text-accent-400">{user.email}</p>
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mt-1 ${
-                                user.role === 'admin' 
-                                  ? 'bg-blue-500/20 text-blue-300'
-                                  : 'bg-slate-500/20 text-slate-300'
-                              }`}>
-                                {user.role === 'admin' ? 'Administrador' : 'Usuário Comum'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
-            </div>
+            {schoolUsers.length === 0 ? (
+              <div className="card border-0 shadow-lg text-center py-12">
+                <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500">Nenhum usuário</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {schoolUsers.map(user => (
+                  <div key={user.id} className="card border-0 shadow-md">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div>
+                        <p className="font-semibold text-slate-900">{user.username}</p>
+                        <p className="text-sm text-slate-600">{user.email}</p>
+                      </div>
+                      {(user.status === 'pending' || user.status === 'pendente') && (
+                        <button onClick={() => handleApproveUser(user.id)} className="btn btn-primary" disabled={usersLoading}>
+                          <Check size={18} />
+                          Aprovar
+                        </button>
+                      )}
+                      {(user.status === 'active' || user.status === 'aprovado') && (
+                        <span className="text-sm font-semibold text-emerald-600">● Ativo</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
